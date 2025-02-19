@@ -1,0 +1,230 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  password    String
+  totalPoints Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Household relationships
+  household      Household? @relation("HouseholdMembers", fields: [householdId], references: [id])
+  ownedHousehold Household? @relation("HouseholdOwner")
+
+  // Chore relationships
+  assignedChores Chore[] @relation("AssignedTo")
+  createdChores  Chore[] @relation("CreatedBy")
+
+  // Point tracking
+  pointHistory PointHistory[]
+
+  // Reward claims
+  rewardClaims    RewardClaim[]
+  householdId     String?
+  ChoreCompletion ChoreCompletion[]
+}
+
+model PointHistory {
+  id        String    @id @default(cuid())
+  points    Int
+  reason    String // e.g., "Completed Chore: Kitchen Deep Clean"
+  type      PointType
+  createdAt DateTime  @default(now())
+
+  // Relationships
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+
+  // Optional relationships for specific point sources
+  choreId String?
+  chore   Chore?  @relation(fields: [choreId], references: [id])
+
+  rewardClaimId String?
+  rewardClaim   RewardClaim? @relation(fields: [rewardClaimId], references: [id])
+}
+
+enum PointType {
+  CHORE_COMPLETE
+  REWARD_CLAIMED
+  BONUS // For special achievements or manual point adjustments
+}
+
+model ChoreCompletion {
+  id           String   @id @default(cuid())
+  completedAt  DateTime @default(now())
+  pointsEarned Int
+  streakCount  Int      @default(1) // What number in the streak this completion was
+  note         String? // Optional note about the completion
+
+  // Relationships
+  choreId String
+  chore   Chore  @relation(fields: [choreId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+
+  // Optional photo proof
+  photoUrl String? // URL to completion photo if uploaded
+
+  @@index([userId, completedAt]) // Index for faster user history queries
+  @@index([choreId, completedAt]) // Index for faster chore history queries
+}
+
+model Household {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Owner relationship
+  ownerId String @unique
+  owner   User   @relation("HouseholdOwner", fields: [ownerId], references: [id])
+
+  // Members relationship
+  members User[] @relation("HouseholdMembers")
+
+  // Household items
+  chores     Chore[]
+  rewards    Reward[]
+  rankPoints ChoreRankPoints[]
+
+  // History tracking
+  pointHistory     PointHistory[]
+  choreCompletions ChoreCompletion[]
+}
+
+model ChoreRankPoints {
+  id         String    @id @default(cuid())
+  rank       ChoreRank @unique
+  pointValue Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relationship to household for custom point values
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+
+  // Relationship to chores
+  chores Chore[]
+
+  @@unique([rank, householdId])
+}
+
+model Chore {
+  id               String         @id @default(cuid())
+  title            String
+  description      String?
+  difficulty       ChoreRank
+  frequency        ChoreFrequency
+  lastReset        DateTime       @default(now())
+  nextReset        DateTime
+  isComplete       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  totalCompletions Int            @default(0) // Track total times this chore has been completed
+
+  // Rank points relationship
+  rankPointsId String
+  rankPoints   ChoreRankPoints @relation(fields: [rankPointsId], references: [id])
+
+  // Relationships
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedTo", fields: [assignedToId], references: [id])
+
+  // History tracking
+  completions  ChoreCompletion[]
+  pointHistory PointHistory[]
+
+  // Streaks and stats
+  currentStreak   Int     @default(0) // Current completion streak
+  longestStreak   Int     @default(0) // Longest completion streak
+  lastCompletedBy String? // ID of last user to complete
+}
+
+model Reward {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  pointsCost   Int
+  isRepeatable Boolean  @default(true)
+  maxClaims    Int? // null means unlimited claims
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+
+  // Claims
+  claims RewardClaim[]
+}
+
+enum RewardClaimStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model RewardClaim {
+  id          String            @id @default(cuid())
+  claimedAt   DateTime          @default(now())
+  status      RewardClaimStatus @default(PENDING)
+  completedAt DateTime?
+  cancelledAt DateTime?
+  notes       String? // Optional notes about the claim
+
+  // Relationships
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  rewardId String
+  reward   Reward @relation(fields: [rewardId], references: [id])
+
+  // Points at time of claim
+  pointsCost   Int // Store the point cost at time of claim
+  PointHistory PointHistory[]
+}
+
+// Each rank includes suggested point values in comments
+enum ChoreRank {
+  QUICK_WIN // 5 points - Quick tasks like making the bed
+  PIECE_OF_CAKE // 10 points - Simple tasks like taking out trash
+  SMOOTH_SAILING // 15 points - Easy but time-consuming like dusting
+  WEEKDAY_WARRIOR // 25 points - Standard daily chores like dishes
+  CHALLENGE_READY // 35 points - More involved tasks like vacuuming
+  TASK_MASTER // 50 points - Complex tasks like deep cleaning bathroom
+  WEEKEND_WARRIOR // 75 points - Big weekend tasks like mowing lawn
+  SUPER_ACHIEVER // 100 points - Major tasks like organizing garage
+  HOUSE_HERO // 150 points - Extensive tasks like deep cleaning kitchen
+  LEGENDARY_EFFORT // 200 points - Marathon tasks like seasonal cleaning
+}
+
+enum ChoreFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
