@@ -3,13 +3,14 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
 import { choreUpdateSchema } from '../../lib/validations/chores'
+import { calculateNextReset } from '../../lib/utils/chores'
 
 const prisma = new PrismaClient()
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'PATCH' && req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' })
-  }
+  } 
 
   const { decodedUser } = req.body
   const { id } = req.query
@@ -30,7 +31,8 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         householdId: decodedUser.householdId
       },
       include: {
-        rankPoints: true
+        rank: true,
+        frequency: true
       }
     })
 
@@ -38,9 +40,25 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Chore not found or not accessible' })
     }
 
+    // Get available ranks and frequencies for validation
+    const [availableRanks, availableFrequencies] = await Promise.all([
+      prisma.choreRank.findMany({
+        where: { householdId: decodedUser.householdId },
+        select: { id: true }
+      }),
+      prisma.choreFrequency.findMany({
+        where: { householdId: decodedUser.householdId },
+        select: { id: true }
+      })
+    ])
+
     // Validate the update data
     const updateData = req.body.data || {}
-    const validatedData = choreUpdateSchema.parse(updateData)
+    const schema = choreUpdateSchema(
+      availableRanks.map(r => r.id),
+      availableFrequencies.map(f => f.id)
+    )
+    const validatedData = schema.parse(updateData)
     
     const updatePayload: Prisma.ChoreUpdateInput = {}
     
@@ -53,49 +71,47 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       updatePayload.description = validatedData.description
     }
     
-    // Handle difficulty change - need to update rankPoints relation
-    if (validatedData.difficulty !== undefined && validatedData.difficulty !== existingChore.difficulty) {
-      // Find the new rank points for this difficulty
-      const newRankPoints = await prisma.choreRankPoints.findUnique({
+    // Handle rank change
+    if (validatedData.rankId !== undefined && validatedData.rankId !== existingChore.rankId) {
+      // Verify the rank exists in this household
+      const newRank = await prisma.choreRank.findFirst({
         where: {
-          rank_householdId: {
-            rank: validatedData.difficulty,
-            householdId: decodedUser.householdId
-          }
+          id: validatedData.rankId,
+          householdId: decodedUser.householdId
         }
       })
 
-      if (!newRankPoints) {
+      if (!newRank) {
         return res.status(400).json({ 
-          error: `No rank points found for difficulty level "${validatedData.difficulty}" in this household` 
+          error: 'Invalid rank selected' 
         })
       }
 
-      updatePayload.difficulty = validatedData.difficulty
-      updatePayload.rankPoints = {
-        connect: { id: newRankPoints.id }
+      updatePayload.rank = {
+        connect: { id: validatedData.rankId }
       }
     }
     
-    // Handle frequency change - need to recalculate nextReset
-    if (validatedData.frequency !== undefined && validatedData.frequency !== existingChore.frequency) {
-      updatePayload.frequency = validatedData.frequency
-      
-      // Calculate new nextReset date based on frequency
-      const newNextReset = new Date()
-      switch (validatedData.frequency) {
-        case 'DAILY':
-          newNextReset.setDate(newNextReset.getDate() + 1)
-          break
-        case 'WEEKLY':
-          newNextReset.setDate(newNextReset.getDate() + 7)
-          break
-        case 'MONTHLY':
-          newNextReset.setMonth(newNextReset.getMonth() + 1)
-          break
+    // Handle frequency change
+    if (validatedData.frequencyId !== undefined && validatedData.frequencyId !== existingChore.frequencyId) {
+      // Verify the frequency exists in this household
+      const newFrequency = await prisma.choreFrequency.findFirst({
+        where: {
+          id: validatedData.frequencyId,
+          householdId: decodedUser.householdId
+        }
+      })
+
+      if (!newFrequency) {
+        return res.status(400).json({ 
+          error: 'Invalid frequency selected' 
+        })
       }
       
-      updatePayload.nextReset = newNextReset
+      updatePayload.frequency = {
+        connect: { id: validatedData.frequencyId }
+      }
+      updatePayload.nextReset = calculateNextReset(new Date(), newFrequency)
     }
     
     // Handle assignedToId change
@@ -143,19 +159,14 @@ async function handler(req: VercelRequest, res: VercelResponse) {
             name: true,
           }
         },
-        rankPoints: {
-          select: {
-            pointValue: true,
-            rank: true
-          }
-        },
+        rank: true,
+        frequency: true,
         completions: {
           take: 1,
           orderBy: {
             completedAt: 'desc'
           },
-          select: {
-            completedAt: true,
+          include: {
             user: {
               select: {
                 id: true,
@@ -168,6 +179,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     return res.status(200).json(updatedChore)
+
   } catch (error) {
     console.error('Error updating chore:', error)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
