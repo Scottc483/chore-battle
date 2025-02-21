@@ -1,25 +1,5 @@
 // prisma/seed.ts
 import { PrismaClient } from '@prisma/client'
-import { choreRanks, choreFrequencies } from '../lib/validations/chores'
-
-enum ChoreRank {
-  QUICK_WIN = 'QUICK_WIN',
-  PIECE_OF_CAKE = 'PIECE_OF_CAKE',
-  SMOOTH_SAILING = 'SMOOTH_SAILING',
-  WEEKDAY_WARRIOR = 'WEEKDAY_WARRIOR',
-  CHALLENGE_READY = 'CHALLENGE_READY',
-  TASK_MASTER = 'TASK_MASTER',
-  WEEKEND_WARRIOR = 'WEEKEND_WARRIOR',
-  SUPER_ACHIEVER = 'SUPER_ACHIEVER',
-  HOUSE_HERO = 'HOUSE_HERO',
-  LEGENDARY_EFFORT = 'LEGENDARY_EFFORT',
-}
-
-enum ChoreFrequency {
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-}
 import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
@@ -29,7 +9,8 @@ async function main() {
   await prisma.pointHistory.deleteMany()
   await prisma.choreCompletion.deleteMany()
   await prisma.chore.deleteMany()
-  await prisma.choreRankPoints.deleteMany()
+  await prisma.choreRank.deleteMany()
+  await prisma.choreFrequency.deleteMany()
   await prisma.rewardClaim.deleteMany()
   await prisma.reward.deleteMany()
   await prisma.user.deleteMany()
@@ -71,86 +52,110 @@ async function main() {
     }
   })
 
-  // Create rank points for the household
-  const rankPointsData: { rank: ChoreRank; points: number }[] = [
-    { rank: ChoreRank.QUICK_WIN, points: 5 },
-    { rank: ChoreRank.PIECE_OF_CAKE, points: 10 },
-    { rank: ChoreRank.SMOOTH_SAILING, points: 15 },
-    { rank: ChoreRank.WEEKDAY_WARRIOR, points: 25 },
-    { rank: ChoreRank.CHALLENGE_READY, points: 35 },
-    { rank: ChoreRank.TASK_MASTER, points: 50 },
-    { rank: ChoreRank.WEEKEND_WARRIOR, points: 75 },
-    { rank: ChoreRank.SUPER_ACHIEVER, points: 100 },
-    { rank: ChoreRank.HOUSE_HERO, points: 150 },
-    { rank: ChoreRank.LEGENDARY_EFFORT, points: 200 },
+  // Create ranks for the household
+  const ranksData = [
+    { name: 'QUICK_WIN', displayName: 'Quick Win', pointValue: 5, isSystem: true },
+    { name: 'PIECE_OF_CAKE', displayName: 'Piece of Cake', pointValue: 10, isSystem: true },
+    { name: 'SMOOTH_SAILING', displayName: 'Smooth Sailing', pointValue: 15, isSystem: true },
+    { name: 'WEEKDAY_WARRIOR', displayName: 'Weekday Warrior', pointValue: 25, isSystem: true },
+    { name: 'CHALLENGE_READY', displayName: 'Challenge Ready', pointValue: 35, isSystem: true },
+    { name: 'TASK_MASTER', displayName: 'Task Master', pointValue: 50, isSystem: true },
+    { name: 'WEEKEND_WARRIOR', displayName: 'Weekend Warrior', pointValue: 75, isSystem: true },
+    { name: 'SUPER_ACHIEVER', displayName: 'Super Achiever', pointValue: 100, isSystem: true },
+    { name: 'HOUSE_HERO', displayName: 'House Hero', pointValue: 150, isSystem: true },
+    { name: 'LEGENDARY_EFFORT', displayName: 'Legendary Effort', pointValue: 200, isSystem: true },
+    // Custom rank example
+    { name: 'QUICK_CLEAN', displayName: 'Quick Clean', pointValue: 8, isSystem: false },
   ]
 
-  const choreRankPoints = await Promise.all(
-    rankPointsData.map(({ rank, points }) =>
-      prisma.choreRankPoints.create({
+  const ranks = await Promise.all(
+    ranksData.map(rank =>
+      prisma.choreRank.create({
         data: {
-          rank,
-          pointValue: points,
+          ...rank,
           householdId: household.id
         }
       })
     )
   )
 
-  // Create some sample chores
-  const chores: { 
-    title: string; 
-    description: string; 
-    difficulty: ChoreRank; 
-    frequency: ChoreFrequency 
-  }[] = [
+  // Create frequencies
+  const frequenciesData = [
+    // System defaults
+    { name: 'DAILY', displayName: 'Daily', daysInterval: 1, isSystem: true },
+    { name: 'WEEKLY', displayName: 'Weekly', daysInterval: 7, isSystem: true },
+    { name: 'MONTHLY', displayName: 'Monthly', daysInterval: 30, isSystem: true },
+    // Custom frequencies
+    { name: 'BIWEEKLY', displayName: 'Every Two Weeks', daysInterval: 14, isSystem: false },
+    { name: 'QUARTERLY', displayName: 'Every Three Months', daysInterval: 90, isSystem: false }
+  ]
+
+  const frequencies = await Promise.all(
+    frequenciesData.map(frequency =>
+      prisma.choreFrequency.create({
+        data: {
+          ...frequency,
+          householdId: household.id
+        }
+      })
+    )
+  )
+
+  // Create chores
+  const choresData = [
     {
       title: 'Make Bed',
       description: 'Make the bed neat and tidy',
-      difficulty: ChoreRank.QUICK_WIN,
-      frequency: ChoreFrequency.DAILY,
+      rankName: 'QUICK_WIN',
+      frequencyName: 'DAILY',
     },
     {
       title: 'Do Dishes',
       description: 'Wash and put away dishes',
-      difficulty: ChoreRank.WEEKDAY_WARRIOR,
-      frequency: ChoreFrequency.DAILY,
+      rankName: 'WEEKDAY_WARRIOR',
+      frequencyName: 'DAILY',
+      assignTo: user2.id
+    },
+    {
+      title: 'Vacuum Living Room',
+      description: 'Vacuum the entire living room floor and furniture',
+      rankName: 'CHALLENGE_READY',
+      frequencyName: 'WEEKLY',
     },
     {
       title: 'Clean Garage',
-      description: 'Organize and clean the garage',
-      difficulty: ChoreRank.LEGENDARY_EFFORT,
-      frequency: ChoreFrequency.MONTHLY,
+      description: 'Organize and clean the garage thoroughly',
+      rankName: 'LEGENDARY_EFFORT',
+      frequencyName: 'QUARTERLY'
+    },
+    {
+      title: 'Quick Bathroom Cleanup',
+      description: 'Wipe down counters and mirrors',
+      rankName: 'QUICK_CLEAN', // Custom rank
+      frequencyName: 'BIWEEKLY'
     }
   ]
 
-  for (const chore of chores) {
-    const rankPoint = choreRankPoints.find(rp => rp.rank === chore.difficulty)
-    if (!rankPoint) continue
+  for (const chore of choresData) {
+    const rank = ranks.find(r => r.name === chore.rankName)
+    if (!rank) continue
+
+    const frequency = frequencies.find(f => f.name === chore.frequencyName)
+    if (!frequency) continue
 
     const nextReset = new Date()
-    switch (chore.frequency) {
-      case ChoreFrequency.DAILY:
-        nextReset.setDate(nextReset.getDate() + 1)
-        break
-      case ChoreFrequency.WEEKLY:
-        nextReset.setDate(nextReset.getDate() + 7)
-        break
-      case ChoreFrequency.MONTHLY:
-        nextReset.setMonth(nextReset.getMonth() + 1)
-        break
-    }
+    nextReset.setDate(nextReset.getDate() + frequency.daysInterval)
 
     await prisma.chore.create({
       data: {
         title: chore.title,
         description: chore.description,
-        difficulty: chore.difficulty,
-        frequency: chore.frequency,
+        rankId: rank.id,
+        frequencyId: frequency.id,
         nextReset,
         householdId: household.id,
         createdById: user1.id,
-        rankPointsId: rankPoint.id
+        assignedToId: chore.assignTo,
       }
     })
   }
@@ -167,6 +172,12 @@ async function main() {
       title: 'Sleep In',
       description: 'Sleep in for an extra hour',
       pointsCost: 50,
+      isRepeatable: true
+    },
+    {
+      title: 'Restaurant Choice',
+      description: 'Pick the restaurant for the next family dinner out',
+      pointsCost: 200,
       isRepeatable: true
     }
   ]

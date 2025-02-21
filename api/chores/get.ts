@@ -2,8 +2,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
-import { ChoreWithRelations } from '../../lib/types/chores'
-import { ChoreResponse } from '../../lib/types/chores'
+import { ChoreWithRelations, ChoreResponse } from '../../lib/types/chores'
+import { isChoreExpired, getChoreResetData } from '../../lib/utils/chores'
 
 const prisma = new PrismaClient()
 
@@ -37,18 +37,14 @@ async function handler(req: VercelRequest, res: VercelResponse) {
             name: true
           }
         },
-        rankPoints: {
-          select: {
-            pointValue: true
-          }
-        },
+        rank: true,
+        frequency: true,
         completions: {
           take: 1,
           orderBy: {
             completedAt: 'desc'
           },
-          select: {
-            completedAt: true,
+          include: {
             user: {
               select: {
                 id: true,
@@ -64,17 +60,46 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       ]
     }) as ChoreWithRelations[]
 
-    const formattedChores: ChoreResponse[] = chores.map((chore) => ({
+    // Check for expired chores and update them
+    const updatePromises = chores.map(async (chore) => {
+      if (isChoreExpired(chore.nextReset)) {
+        const resetData = getChoreResetData(chore.frequency)
+        await prisma.chore.update({
+          where: { id: chore.id },
+          data: resetData
+        })
+        return {
+          ...chore,
+          ...resetData
+        }
+      }
+      return chore
+    })
+
+    const updatedChores = await Promise.all(updatePromises)
+
+    const formattedChores: ChoreResponse[] = updatedChores.map((chore) => ({
       id: chore.id,
       title: chore.title,
       description: chore.description,
-      difficulty: chore.difficulty,
-      frequency: chore.frequency,
+      rank: {
+        id: chore.rank.id,
+        name: chore.rank.name,
+        displayName: chore.rank.displayName,
+        pointValue: chore.rank.pointValue,
+        isSystem: chore.rank.isSystem
+      },
+      frequency: {
+        id: chore.frequency.id,
+        name: chore.frequency.name,
+        displayName: chore.frequency.displayName,
+        daysInterval: chore.frequency.daysInterval,
+        isSystem: chore.frequency.isSystem
+      },
       isComplete: chore.isComplete,
       nextReset: chore.nextReset,
       currentStreak: chore.currentStreak,
       totalCompletions: chore.totalCompletions,
-      pointValue: chore.rankPoints.pointValue,
       assignedTo: chore.assignedTo ? {
         id: chore.assignedTo.id,
         name: chore.assignedTo.name

@@ -3,6 +3,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
 import { choreSchema } from '../../lib/validations/chores'
+import { calculateNextReset } from '../../lib/utils/chores'
 
 const prisma = new PrismaClient()
 
@@ -22,50 +23,54 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // Validate the incoming data against the schema
-        const validatedData = choreSchema.parse(req.body.data)
-        
-        // Find existing rank points for this difficulty in the household
-        const rankPoints = await prisma.choreRankPoints.findUnique({
+        // Get available ranks and frequencies for validation
+        const [availableRanks, availableFrequencies] = await Promise.all([
+            prisma.choreRank.findMany({
+                where: { householdId: decodedUser.householdId },
+                select: { id: true }
+            }),
+            prisma.choreFrequency.findMany({
+                where: { householdId: decodedUser.householdId },
+                select: { id: true }
+            })
+        ])
+
+        // Create validation schema with available options
+        const schema = choreSchema(
+            availableRanks.map(r => r.id),
+            availableFrequencies.map(f => f.id)
+        )
+
+        // Validate the incoming data
+        const validatedData = schema.parse(req.body.data)
+
+        // Get the frequency for calculating next reset
+        const frequency = await prisma.choreFrequency.findFirst({
             where: {
-                rank_householdId: {
-                    rank: validatedData.difficulty,
-                    householdId: decodedUser.householdId
-                }
+                id: validatedData.frequencyId,
+                householdId: decodedUser.householdId
             }
         })
 
-        if (!rankPoints) {
+        if (!frequency) {
             return res.status(400).json({ 
-                error: `No rank points found for difficulty level "${validatedData.difficulty}" in this household` 
+                error: 'Invalid frequency selected'
             })
         }
 
-        // Calculate next reset date based on frequency
-        const nextReset = new Date()
-        switch (validatedData.frequency) {
-            case 'DAILY':
-                nextReset.setDate(nextReset.getDate() + 1)
-                break
-            case 'WEEKLY':
-                nextReset.setDate(nextReset.getDate() + 7)
-                break
-            case 'MONTHLY':
-                nextReset.setMonth(nextReset.getMonth() + 1)
-                break
-        }
+        // Calculate next reset date
+        const now = new Date()
+        const nextReset = calculateNextReset(now, frequency)
         
-        // Construct base chore data with proper type
+        // Construct base chore data
         const choreData: Prisma.ChoreCreateInput = {
             title: validatedData.title,
             description: validatedData.description || '',
-            difficulty: validatedData.difficulty,
-            frequency: validatedData.frequency,
             isComplete: false,
             currentStreak: 0,
             totalCompletions: 0,
             nextReset: nextReset,
-            lastReset: new Date(),
+            lastReset: now,
             createdBy: {
                 connect: {
                     id: decodedUser.userId
@@ -76,9 +81,14 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                     id: decodedUser.householdId
                 }
             },
-            rankPoints: {
+            rank: {
                 connect: {
-                    id: rankPoints.id
+                    id: validatedData.rankId
+                }
+            },
+            frequency: {
+                connect: {
+                    id: validatedData.frequencyId
                 }
             }
         }
@@ -121,10 +131,20 @@ async function handler(req: VercelRequest, res: VercelResponse) {
                         name: true,
                     }
                 },
-                rankPoints: {
-                    select: {
-                        pointValue: true,
-                        rank: true
+                rank: true,
+                frequency: true,
+                completions: {
+                    take: 1,
+                    orderBy: {
+                        completedAt: 'desc'
+                    },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
                     }
                 }
             }

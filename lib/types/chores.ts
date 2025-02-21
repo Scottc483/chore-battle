@@ -1,27 +1,41 @@
 // lib/types/chores.ts
 import { z } from 'zod'
-import { choreSchema, choreRanks, choreFrequencies } from '../validations/chores'
-import { User, Chore, ChoreRankPoints } from '.prisma/client'
+import { frequencySchema} from '../validations/choreFrequencies'
+import { rankSchema } from '../validations/choreRanks'
+import { User, Chore, ChoreRank, ChoreFrequency, ChoreCompletion as PrismaChoreCompletion } from '.prisma/client'
 
+// Extract types from validation schemas
+export type FrequencyInput = z.infer<typeof frequencySchema>
+export type RankInput = z.infer<typeof rankSchema>
 
-
-// Extract types from Zod schema
-export type ChoreInput = z.infer<typeof choreSchema>
-
-// Define enum types based on our validation arrays
-export type ChoreRank = typeof choreRanks[number]
-export type ChoreFrequency = typeof choreFrequencies[number]
-
-// Define base user type for responses
+// Define basic user type for responses
 export interface UserBasic {
   id: string
   name: string
 }
 
-// Define completion type
-export interface ChoreCompletion {
+// Define completion response type
+export interface ChoreCompletionResponse {
   completedAt: Date
   completedBy: UserBasic
+}
+
+// Frequency info for responses
+export interface FrequencyInfo {
+  id: string
+  name: string
+  displayName: string
+  daysInterval: number
+  isSystem: boolean
+}
+
+// Rank info for responses
+export interface RankInfo {
+  id: string
+  name: string
+  displayName: string
+  pointValue: number
+  isSystem: boolean
 }
 
 // Define response type for a single chore
@@ -29,24 +43,40 @@ export interface ChoreResponse {
   id: string
   title: string
   description?: string | null
-  difficulty: ChoreRank
-  frequency: ChoreFrequency
+  rank: RankInfo
+  frequency: FrequencyInfo
   isComplete: boolean
   nextReset: Date
   currentStreak: number
   totalCompletions: number
-  pointValue: number
   assignedTo: UserBasic | null
   createdBy: UserBasic
-  lastCompletion: ChoreCompletion | null
+  lastCompletion: ChoreCompletionResponse | null
 }
 
-
+// Full chore type with all relations
 export type ChoreWithRelations = Chore & {
   assignedTo: User | null
   createdBy: User
-  rankPoints: ChoreRankPoints
-  completions: (ChoreCompletion & {
+  rank: ChoreRank
+  frequency: ChoreFrequency
+  completions: (PrismaChoreCompletion & {
     user: User
   })[]
+}
+
+// Frequency with household info
+export type FrequencyWithHousehold = ChoreFrequency & {
+  household: {
+    id: string
+    name: string
+  }
+}
+
+// Rank with household info
+export type RankWithHousehold = ChoreRank & {
+  household: {
+    id: string
+    name: string
+  }
 }

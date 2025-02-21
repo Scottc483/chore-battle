@@ -102,48 +102,63 @@ model Household {
   members User[] @relation("HouseholdMembers")
 
   // Household items
-  chores     Chore[]
-  rewards    Reward[]
-  rankPoints ChoreRankPoints[]
+  chores           Chore[]
+  rewards          Reward[]
+  choreRanks       ChoreRank[]
+  choreFrequencies ChoreFrequency[]
 
   // History tracking
   pointHistory     PointHistory[]
   choreCompletions ChoreCompletion[]
 }
 
-model ChoreRankPoints {
-  id         String    @id @default(cuid())
-  rank       ChoreRank @unique
-  pointValue Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+model ChoreFrequency {
+  id           String   @id @default(cuid())
+  name         String   // e.g., "DAILY", "WEEKLY", "BIWEEKLY" 
+  displayName  String   // e.g., "Daily", "Weekly", "Every Two Weeks"
+  daysInterval Int      // e.g., 1 for daily, 7 for weekly, 14 for biweekly
+  isSystem     Boolean  @default(false) // True for system defaults (daily, weekly, monthly)
+  createdAt    DateTime @default(now())
+  
+  // Relationship
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id])
+  chores       Chore[]
+  
+  @@unique([name, householdId])
+}
 
-  // Relationship to household for custom point values
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id])
-
-  // Relationship to chores
-  chores Chore[]
-
-  @@unique([rank, householdId])
+model ChoreRank {
+  id           String   @id @default(cuid())
+  name         String   // e.g., "QUICK_WIN", "PIECE_OF_CAKE"
+  displayName  String   // e.g., "Quick Win", "Piece of Cake"
+  pointValue   Int      // e.g., 5, 10, 15, etc.
+  isSystem     Boolean  @default(false) // True for system defaults
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relationship
+  householdId  String
+  household    Household @relation(fields: [householdId], references: [id])
+  chores       Chore[]
+  
+  @@unique([name, householdId])
 }
 
 model Chore {
   id               String         @id @default(cuid())
   title            String
   description      String?
-  difficulty       ChoreRank
-  frequency        ChoreFrequency
+  rankId           String
+  rank             ChoreRank      @relation(fields: [rankId], references: [id])
+  frequencyId      String
+  frequency        ChoreFrequency @relation(fields: [frequencyId], references: [id])
   lastReset        DateTime       @default(now())
   nextReset        DateTime
   isComplete       Boolean        @default(false)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   totalCompletions Int            @default(0) // Track total times this chore has been completed
-
-  // Rank points relationship
-  rankPointsId String
-  rankPoints   ChoreRankPoints @relation(fields: [rankPointsId], references: [id])
 
   // Relationships
   householdId String
@@ -207,24 +222,4 @@ model RewardClaim {
   // Points at time of claim
   pointsCost   Int // Store the point cost at time of claim
   PointHistory PointHistory[]
-}
-
-// Each rank includes suggested point values in comments
-enum ChoreRank {
-  QUICK_WIN // 5 points - Quick tasks like making the bed
-  PIECE_OF_CAKE // 10 points - Simple tasks like taking out trash
-  SMOOTH_SAILING // 15 points - Easy but time-consuming like dusting
-  WEEKDAY_WARRIOR // 25 points - Standard daily chores like dishes
-  CHALLENGE_READY // 35 points - More involved tasks like vacuuming
-  TASK_MASTER // 50 points - Complex tasks like deep cleaning bathroom
-  WEEKEND_WARRIOR // 75 points - Big weekend tasks like mowing lawn
-  SUPER_ACHIEVER // 100 points - Major tasks like organizing garage
-  HOUSE_HERO // 150 points - Extensive tasks like deep cleaning kitchen
-  LEGENDARY_EFFORT // 200 points - Marathon tasks like seasonal cleaning
-}
-
-enum ChoreFrequency {
-  DAILY
-  WEEKLY
-  MONTHLY
 }
