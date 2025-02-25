@@ -2,8 +2,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
-
-const prisma = new PrismaClient()
+import prisma from '../../lib/prisma'
 
 async function getFrequencies(req: VercelRequest, res: VercelResponse) {
   const { decodedUser } = req.body
