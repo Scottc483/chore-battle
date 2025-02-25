@@ -1,10 +1,10 @@
 // api/chores/getById.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
+import prisma from '../../lib/prisma'
 import { ChoreWithRelations, ChoreResponse } from '../../lib/types/chores'
 import { isChoreExpired, getChoreResetData } from '../../lib/utils/chores'
 
-const prisma = new PrismaClient()
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
