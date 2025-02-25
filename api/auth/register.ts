@@ -4,8 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 import * as z from 'zod'
 import { registerSchema } from '../../lib/validations/auth'
-
-const prisma = new PrismaClient()
+import prisma from '../../lib/prisma'
 
 
 // Compare this snippet from ChoreBattleAPI/api/auth/login.ts:

@@ -4,8 +4,7 @@ import bcrypt from 'bcrypt'
 import * as z from 'zod'
 import jwt from 'jsonwebtoken'
 import { loginSchema } from '../../lib/validations/auth'
-
-const prisma = new PrismaClient()
+import prisma from '../../lib/prisma'
 
 // Login input validation schema
 

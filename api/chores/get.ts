@@ -4,8 +4,8 @@ import { PrismaClient } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
 import { ChoreWithRelations, ChoreResponse } from '../../lib/types/chores'
 import { isChoreExpired, getChoreResetData } from '../../lib/utils/chores'
+import prisma from '../../lib/prisma'
 
-const prisma = new PrismaClient()
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

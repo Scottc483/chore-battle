@@ -2,8 +2,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
-
-const prisma = new PrismaClient()
+import prisma from '../../lib/prisma'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'DELETE') {

@@ -1,11 +1,10 @@
 // api/chores/update.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { PrismaClient, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
 import { choreUpdateSchema } from '../../lib/validations/chores'
 import { calculateNextReset } from '../../lib/utils/chores'
-
-const prisma = new PrismaClient()
+import prisma from "../../lib/prisma"
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'PATCH' && req.method !== 'PUT') {
