@@ -80,3 +80,37 @@ export type RankWithHousehold = ChoreRank & {
     name: string
   }
 }
+
+// Additional types for choreRank CRUD operations
+
+// Input for creating a new chore rank
+export interface ChoreRankCreateInput {
+  name: string;
+  displayName: string;
+  pointValue: number;
+}
+
+// Input for updating a chore rank
+export interface ChoreRankUpdateInput {
+  id: string;
+  name?: string;
+  displayName?: string;
+  pointValue?: number;
+}
+
+// Response for chore rank operations
+export interface ChoreRankResponse {
+  id: string;
+  name: string;
+  displayName: string;
+  pointValue: number;
+  isSystem: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  householdId: string;
+}
+
+// Type with associated chores count for API responses
+export interface ChoreRankWithChoreCount extends ChoreRankResponse {
+  choreCount: number;
+}
