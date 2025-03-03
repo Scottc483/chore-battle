@@ -5,10 +5,16 @@
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "ts-node prisma/seed.ts"
-  },
+"scripts": {
+  "seed": "ts-node prisma/seed.ts",
+  "test": "node scripts/test.js",
+  "test:api": "jest tests/api",
+  "test:household": "jest tests/api/household",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage",
+  "test:lib": "jest lib/__tests__",
+  "lint": "next lint"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -25,6 +31,12 @@
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.8",
     "@types/node": "^22.13.1",
+    "@types/jest": "^29.5.5",
+    "chalk": "^4.1.2",
+    "jest": "^29.7.0",
+    "jest-mock-extended": "^3.0.5",
+    "node-mocks-http": "^1.13.0",
+    "ts-jest": "^29.1.1",
     "prisma": "^6.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
