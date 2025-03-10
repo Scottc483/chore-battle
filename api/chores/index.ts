@@ -27,4 +27,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withAuth(handler)
+export default handler

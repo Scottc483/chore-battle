@@ -1,8 +1,9 @@
 // api/households/getMembers.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../middleware/auth'
 
-export default async function getHouseholdMembers(req: VercelRequest, res: VercelResponse) {
+ async function getHouseholdMembers(req: VercelRequest, res: VercelResponse) {
   try {
     const { id } = req.query
     const { decodedUser } = req.body
@@ -63,3 +64,5 @@ export default async function getHouseholdMembers(req: VercelRequest, res: Verce
     return res.status(500).json({ error: 'Failed to fetch household members' })
   }
 }
+
+export default withAuth(getHouseholdMembers)

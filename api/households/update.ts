@@ -4,10 +4,10 @@ import prisma from '../../lib/prisma'
 
 export default async function updateHousehold(req: VercelRequest, res: VercelResponse) {
   try {
-    const { id } = req.query
+
     const { name } = req.body
     const { decodedUser } = req.body
-
+    const  id  = decodedUser.householdId
     // Check if user is the owner of the household
     const household = await prisma.household.findFirst({
       where: {

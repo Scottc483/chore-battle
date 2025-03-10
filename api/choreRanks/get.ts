@@ -1,7 +1,8 @@
-// api/choreRanks/get.ts
+// api/chore-ranks/get.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import { withAuth } from '../middleware/auth'
+import { ChoreRankResponse, ChoreRankWithChoreCount } from '../../lib/types/chores'
 
 const prisma = new PrismaClient()
 
@@ -21,12 +22,30 @@ async function handler(req: VercelRequest, res: VercelResponse) {
       where: {
         householdId: decodedUser.householdId
       },
+      include: {
+        _count: {
+          select: { chores: true }
+        }
+      },
       orderBy: [
         { pointValue: 'asc' }
       ]
     })
 
-    return res.status(200).json(choreRanks)
+    // Format the response to include chore counts
+    const formattedRanks: ChoreRankWithChoreCount[] = choreRanks.map(rank => ({
+      id: rank.id,
+      name: rank.name,
+      displayName: rank.displayName,
+      pointValue: rank.pointValue,
+      isSystem: rank.isSystem,
+      createdAt: rank.createdAt,
+      updatedAt: rank.updatedAt,
+      householdId: rank.householdId,
+      choreCount: rank._count.chores
+    }))
+
+    return res.status(200).json(formattedRanks)
   } catch (error) {
     console.error('Error fetching chore ranks:', error)
     return res.status(500).json({ error: 'Failed to fetch chore ranks' })

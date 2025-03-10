@@ -1,16 +1,19 @@
 // api/households/getById.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../middleware/auth'
 
-export default async function getHouseholdById(req: VercelRequest, res: VercelResponse) {
+async function getHouseholdById(req: VercelRequest, res: VercelResponse) {
   try {
     const { id } = req.query
+    console.log('id', req.query);
     const { decodedUser } = req.body
+    // console.log('decodedUser', decodedUser)
 
     // Check if user has access to this household
     const userHousehold = await prisma.household.findFirst({
       where: {
-        id: id as string,
+        id: decodedUser.householdId as string,
         OR: [
           { members: { some: { id: decodedUser.userId } } },
           { ownerId: decodedUser.userId }
@@ -24,7 +27,7 @@ export default async function getHouseholdById(req: VercelRequest, res: VercelRe
 
     // Get full household details
     const household = await prisma.household.findUnique({
-      where: { id: id as string },
+      where: { id: decodedUser.householdId as string },
       include: {
         owner: {
           select: {
@@ -61,3 +64,5 @@ export default async function getHouseholdById(req: VercelRequest, res: VercelRe
     return res.status(500).json({ error: 'Failed to fetch household' })
   }
 }
+
+export default withAuth(getHouseholdById);
