@@ -1,3 +1,4 @@
+// api/auth/login.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
@@ -5,8 +6,7 @@ import * as z from 'zod'
 import jwt from 'jsonwebtoken'
 import { loginSchema } from '../../lib/validations/auth'
 import prisma from '../../lib/prisma'
-
-// Login input validation schema
+import { withCors } from '../middleware/cors' // Import your CORS middleware
 
 // Ensure JWT_SECRET exists and is a string
 const JWT_SECRET = process.env.JWT_SECRET as string
@@ -14,7 +14,7 @@ if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set')
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function loginHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -22,6 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Validate input
     const result = loginSchema.safeParse(req.body)
+    console.log("Login request received", result);
     if (!result.success) {
       return res.status(400).json({
         error: 'Invalid input',
@@ -53,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
-
+    console.log('Current server time:', new Date().toISOString());
     // Generate JWT token
     const token = jwt.sign(
       { 
@@ -82,3 +83,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+// Apply the CORS middleware
+export default withCors(loginHandler);

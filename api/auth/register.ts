@@ -1,14 +1,13 @@
-// Purpose: Register a new user with the application.
+// api/auth/register.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 import * as z from 'zod'
 import { registerSchema } from '../../lib/validations/auth'
 import prisma from '../../lib/prisma'
+import { withCors } from '../middleware/cors' // Import your CORS middleware
 
-
-// Compare this snippet from ChoreBattleAPI/api/auth/login.ts:
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function registerHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -62,3 +61,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+// Apply the CORS middleware
+export default withCors(registerHandler);
