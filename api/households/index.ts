@@ -15,7 +15,7 @@ import generateInviteCode from './invite-code'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   const { id, action } = req.query
-  
+  console.log('id in index household', id)
   // Handle specific actions based on query params
   if (action) {
     switch (action) {
@@ -33,7 +33,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'POST') return joinHousehold(req, res)
         break
       case 'invite-code':
-        if (req.method === 'POST') return generateInviteCode(req, res)
+        if (req.method === 'POST') return withAuth(generateInviteCode)(req, res)
         break
     }
   }
@@ -56,4 +56,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withAuth(handler)
+export default handler;

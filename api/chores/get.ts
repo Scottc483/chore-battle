@@ -14,6 +14,8 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { decodedUser } = req.body
 
+  console.log('decodedUser', decodedUser)
+
   if (!decodedUser.householdId) {
     return res.status(403).json({ error: 'User must be part of a household to view chores' })
   }

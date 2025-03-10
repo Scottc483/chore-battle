@@ -1,8 +1,9 @@
 // api/households/delete.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../middleware/auth'
 
-export default async function deleteHousehold(req: VercelRequest, res: VercelResponse) {
+async function deleteHousehold(req: VercelRequest, res: VercelResponse) {
   try {
     const { id } = req.query
     const { decodedUser } = req.body
@@ -70,3 +71,5 @@ export default async function deleteHousehold(req: VercelRequest, res: VercelRes
     return res.status(500).json({ error: 'Failed to delete household' })
   }
 }
+
+export default withAuth(deleteHousehold)

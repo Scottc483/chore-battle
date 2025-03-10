@@ -2,8 +2,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { nanoid } from 'nanoid'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../middleware/auth'
 
-export default async function createHousehold(req: VercelRequest, res: VercelResponse) {
+async function createHousehold(req: VercelRequest, res: VercelResponse) {
   try {
     const { name } = req.body
     const { decodedUser } = req.body
@@ -91,3 +92,5 @@ export default async function createHousehold(req: VercelRequest, res: VercelRes
     return res.status(500).json({ error: 'Failed to create household' })
   }
 }
+
+export default withAuth(createHousehold)

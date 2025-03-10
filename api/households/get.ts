@@ -1,11 +1,12 @@
 // api/households/get.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../middleware/auth'
 
-export default async function getHouseholds(req: VercelRequest, res: VercelResponse) {
+async function getHouseholds(req: VercelRequest, res: VercelResponse) {
   try {
     const { decodedUser } = req.body
-
+    console.log('decodedUser', req.query.query);
     // Get households where user is either a member or owner
     const households = await prisma.household.findMany({
       where: {
@@ -37,3 +38,5 @@ export default async function getHouseholds(req: VercelRequest, res: VercelRespo
     return res.status(500).json({ error: 'Failed to fetch households' })
   }
 }
+
+export default withAuth(getHouseholds)
