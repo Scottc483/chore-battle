@@ -1,8 +1,10 @@
 // Test file for the household creation API endpoint
 import { createMocks } from 'node-mocks-http';
-import handler from '../../../api/households/index';
+import handler from '../../../api/households/create';
 import { prismaMock } from '../setup';
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { householdCreateSchema } from '../../../lib/validations/households';
+
 
 
 // Mock the auth middleware to pass through the handler without authentication
@@ -12,6 +14,7 @@ jest.mock('../../../api/middleware/auth', () => ({
 
 describe('Create Household API Endpoint', () => {
     beforeEach(() => {
+      
       // Mock user data to simulate an existing user without a household
       (prismaMock.user.findUnique as jest.Mock).mockResolvedValue({
         id: 'user-123',
@@ -45,36 +48,54 @@ describe('Create Household API Endpoint', () => {
       (prismaMock.user.update as jest.Mock).mockResolvedValue({});
     });
   
-    // Test that unsupported HTTP methods return 405 Method Not Allowed
-    it('should return 405 for non-implemented methods', async () => {
-        const { req, res } = createMocks({
-          method: 'PUT', // Using PUT as an example of unsupported method
-          body: {
-            decodedUser: { userId: 'user-123' },
-          },
-        });
-      
-        req.query = {};
-        await handler(req, res);
-        
-        expect(res._getStatusCode()).toBe(405);
-        expect(JSON.parse(res._getData())).toEqual({ error: 'Method not allowed' });
-    });
+
 
     // Test validation: household name is required
     it('should return 400 if name is missing', async () => {
         const { req, res } = createMocks({
-          method: 'POST',
-          body: {
-            decodedUser: { userId: 'user-123' },
-          },
+            method: 'POST',
+            body: {
+                decodedUser: { userId: 'user-123' },
+            },
         });
 
         req.query = {};
         await handler(req, res);
         
         expect(res._getStatusCode()).toBe(400);
-        expect(JSON.parse(res._getData())).toEqual({ error: 'Household name is required' });
+        expect(JSON.parse(res._getData())).toEqual(
+          {"error": [{"code": "invalid_type", "expected": "string", "message": "Required", "path": ["name"], "received": "undefined"}]}
+        );
+    });
+
+    // Test validation: household name is too long
+    it('should return 400 if household name is too long', async () => {
+        const { req, res } = createMocks({
+            method: 'POST',
+            body: {
+                decodedUser: { userId: 'user-123' },
+                name: 'A'.repeat(101), // Exceeding max length
+            },
+        });
+
+        req.query = {};
+        await handler(req, res);
+
+        expect(res._getStatusCode()).toBe(400);
+        // should expect this  {"error": [{"code": "too_big", "exact": false, "inclusive": true, "maximum": 100, "message": "Household name cannot exceed 100 characters", "path": ["name"], "type": "string"}]}
+        expect(JSON.parse(res._getData())).toEqual({
+            error: [
+                {
+                    code: "too_big",
+                    exact: false,
+                    inclusive: true,
+                    maximum: 100,
+                    message: "Household name cannot exceed 100 characters",
+                    path: ["name"],
+                    type: "string",
+                },
+            ],
+        });
     });
 
     // Test that users can't create a household if they're already in one

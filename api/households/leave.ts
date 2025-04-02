@@ -1,8 +1,9 @@
 // api/households/leave.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
-
-export default async function leaveHousehold(req: VercelRequest, res: VercelResponse) {
+import { withAuth } from '../../lib/middleware/auth'
+import { generateToken } from '../../lib/middleware/generateToken'
+async function leaveHousehold(req: VercelRequest, res: VercelResponse) {
   try {
     const { decodedUser } = req.body
 
@@ -42,10 +43,17 @@ export default async function leaveHousehold(req: VercelRequest, res: VercelResp
 
     return res.status(200).json({ 
       success: true,
-      message: 'Successfully left the household' 
+      message: 'Successfully left the household',
+      token: generateToken({
+        userId: decodedUser.userId,
+        email: decodedUser.email,
+        householdId: ""
+      })
     })
   } catch (error) {
     console.error('Failed to leave household:', error)
     return res.status(500).json({ error: 'Failed to leave household' })
   }
 }
+
+export default withAuth(leaveHousehold)

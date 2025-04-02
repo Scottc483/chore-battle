@@ -12,9 +12,11 @@ function authHandler(handler: Function) {
   return async (req: VercelRequest, res: VercelResponse) => {
     try {
       console.log('Starting auth middleware');
-      console.log('Request headers:', req.headers);
+
       // Get token from Authorization header
+      // console.log('req', req.headers)
       const authHeader = req.headers.authorization
+      // console.log('authHeader', authHeader)
       if (!authHeader?.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Authentication required' })
       }
@@ -27,7 +29,7 @@ function authHandler(handler: Function) {
         email: string;
         householdId?: string;
       }
-
+   
       if (!decodedUser.userId || !decodedUser.email) {
         return res.status(401).json({ error: 'Invalid token' })
       }

@@ -1,6 +1,6 @@
 // api/households/invite-code.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { nanoid } from 'nanoid'
 import prisma from '../../lib/prisma'
 

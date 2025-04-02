@@ -1,12 +1,24 @@
 // api/households/join.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { withAuth } from '../middleware/auth'
 import prisma from '../../lib/prisma'
+
+import { withAuth } from '../../lib/middleware/auth'
+import { generateToken } from '../../lib/middleware/generateToken'
+
+import { householdJoinSchema } from '../../lib/validations/households'
+
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+    // Validate request body
+    const validationResult = householdJoinSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ error: validationResult.error.errors });
+    }
+    
   const { decodedUser } = req.body
   const { inviteCode } = req.body
 
@@ -74,7 +86,12 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ 
       success: true,
       message: `You have successfully joined ${household.name}`,
-      user: updatedUser
+      user: updatedUser,
+      token: generateToken({
+        userId: decodedUser.userId,
+        email: decodedUser.email,
+        householdId: household.id
+      })
     })
   } catch (error) {
     console.error('Error joining household:', error)

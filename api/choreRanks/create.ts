@@ -1,7 +1,7 @@
 // api/chore-ranks/create.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { ChoreRankCreateInput, ChoreRankResponse } from '../../lib/types/chores'
 import { rankSchema } from '../../lib/validations/choreRanks'
 

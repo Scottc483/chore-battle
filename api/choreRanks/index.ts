@@ -1,6 +1,6 @@
 // api/chore-ranks/index.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import getChoreRanks from './get'
 import createChoreRank from './create'
 import updateChoreRank from './update'
@@ -21,4 +21,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default withAuth(handler)
+export default handler;

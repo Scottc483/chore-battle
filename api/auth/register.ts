@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 import * as z from 'zod'
 import { registerSchema } from '../../lib/validations/auth'
 import prisma from '../../lib/prisma'
-import { withCors } from '../middleware/cors' // Import your CORS middleware
+import { withCors } from '../../lib/middleware/cors' // Import your CORS middleware
 
 async function registerHandler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

@@ -1,11 +1,14 @@
 // api/households/transferOwnership.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
-
-export default async function transferOwnership(req: VercelRequest, res: VercelResponse) {
+import { withAuth } from '../../lib/middleware/auth'
+ async function transferOwnership(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
   try {
-    const { id } = req.query
     const { newOwnerId } = req.body
+    console.log('newOwnerId', newOwnerId);
     const { decodedUser } = req.body
 
     if (!newOwnerId) {
@@ -14,7 +17,7 @@ export default async function transferOwnership(req: VercelRequest, res: VercelR
 
     // Get the household
     const household = await prisma.household.findUnique({
-      where: { id: id as string },
+      where: { id: decodedUser.householdId as string },
       include: {
         members: {
           select: { id: true }
@@ -39,7 +42,7 @@ export default async function transferOwnership(req: VercelRequest, res: VercelR
 
     // Transfer ownership
     await prisma.household.update({
-      where: { id: id as string },
+      where: { id: decodedUser.householdId   as string },
       data: { ownerId: newOwnerId }
     })
 
@@ -53,3 +56,5 @@ export default async function transferOwnership(req: VercelRequest, res: VercelR
     return res.status(500).json({ error: 'Failed to transfer ownership' })
   }
 }
+
+export default withAuth(transferOwnership)
