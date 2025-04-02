@@ -6,7 +6,8 @@ import * as z from 'zod'
 import jwt from 'jsonwebtoken'
 import { loginSchema } from '../../lib/validations/auth'
 import prisma from '../../lib/prisma'
-import { withCors } from '../middleware/cors' // Import your CORS middleware
+import { withCors } from '../../lib/middleware/cors' // Import your CORS middleware
+import  { generateToken }  from '../../lib/middleware/generateToken'
 
 // Ensure JWT_SECRET exists and is a string
 const JWT_SECRET = process.env.JWT_SECRET as string
@@ -56,15 +57,11 @@ async function loginHandler(req: VercelRequest, res: VercelResponse) {
     }
     console.log('Current server time:', new Date().toISOString());
     // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id,
-        email: user.email,
-        householdId: user.householdId 
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      householdId: user.householdId || undefined
+    })
 
     // Return user data and token
     return res.status(200).json({

@@ -1,7 +1,7 @@
 // api/chores/create.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { choreSchema } from '../../lib/validations/chores'
 import { calculateNextReset } from '../../lib/utils/chores'
 import prisma from '../../lib/prisma'

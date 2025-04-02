@@ -1,6 +1,6 @@
 // api/chores/index.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import getChores from './get'
 import createChore from './create'
 import updateChore from './update'
@@ -27,4 +27,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default handler
+export default handler;

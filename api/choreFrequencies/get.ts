@@ -1,7 +1,7 @@
 // api/frequencies/get.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import prisma from '../../lib/prisma'
 
 async function getFrequencies(req: VercelRequest, res: VercelResponse) {

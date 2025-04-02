@@ -1,10 +1,17 @@
 // api/households/delete.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
-import { withAuth } from '../middleware/auth'
-
+import { withAuth } from '../../lib/middleware/auth'
+import { generateToken } from '../../lib/middleware/generateToken'
+import { householdDeleteSchema } from '../../lib/validations/households';
 async function deleteHousehold(req: VercelRequest, res: VercelResponse) {
   try {
+
+    const validationResult = householdDeleteSchema.safeParse(req.query);
+    if (!validationResult.success) {
+      return res.status(400).json({ error: validationResult.error.errors });
+    }
+    
     const { id } = req.query
     const { decodedUser } = req.body
 
@@ -64,7 +71,12 @@ async function deleteHousehold(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ 
       success: true,
-      message: 'Household deleted successfully' 
+      message: 'Household deleted successfully',
+      token: generateToken({
+        userId: decodedUser.userId,
+        email: decodedUser.email,
+        householdId: ""
+      })
     })
   } catch (error) {
     console.error('Failed to delete household:', error)

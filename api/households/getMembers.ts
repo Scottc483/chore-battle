@@ -1,17 +1,16 @@
 // api/households/getMembers.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 
  async function getHouseholdMembers(req: VercelRequest, res: VercelResponse) {
   try {
-    const { id } = req.query
     const { decodedUser } = req.body
 
     // Check if user has access to this household
     const userHousehold = await prisma.household.findFirst({
       where: {
-        id: id as string,
+        id: decodedUser.id as string,
         OR: [
           { members: { some: { id: decodedUser.userId } } },
           { ownerId: decodedUser.userId }
@@ -26,7 +25,7 @@ import { withAuth } from '../middleware/auth'
     // Get all members with relevant information
     const members = await prisma.user.findMany({
       where: {
-        householdId: id as string
+        householdId: decodedUser.householdId as string
       },
       select: {
         id: true,
@@ -48,7 +47,7 @@ import { withAuth } from '../middleware/auth'
 
     // Get the owner information
     const household = await prisma.household.findUnique({
-      where: { id: id as string },
+      where: { id: decodedUser.householdId as string },
       select: { ownerId: true }
     })
 

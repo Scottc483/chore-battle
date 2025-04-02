@@ -2,7 +2,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { frequencySchema } from '../../lib/validations/choreFrequencies'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import prisma from '../../lib/prisma'
 
 async function createFrequency(req: VercelRequest, res: VercelResponse) {

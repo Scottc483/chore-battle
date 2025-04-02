@@ -2,6 +2,9 @@
 import { PrismaClient } from '@prisma/client';
 import { MockProxy, mockDeep } from 'jest-mock-extended';
 
+// Add this before the prisma mock setup
+process.env.JWT_SECRET = 'test-jwt-secret'
+
 // Create a mock version of PrismaClient with correct typing
 const prisma = mockDeep<PrismaClient>();
 

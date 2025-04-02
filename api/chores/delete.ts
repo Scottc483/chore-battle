@@ -1,7 +1,7 @@
 // api/chores/delete.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient, Prisma } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import prisma from '../../lib/prisma'
 
 async function handler(req: VercelRequest, res: VercelResponse) {

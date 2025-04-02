@@ -1,20 +1,23 @@
 // api/households/removeMember.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../../lib/middleware/auth'
 
-export default async function removeMember(req: VercelRequest, res: VercelResponse) {
+async function removeMember(req: VercelRequest, res: VercelResponse) {
   try {
-    const { id } = req.query
+
     const { memberId } = req.body
     const { decodedUser } = req.body
+    console.log(memberId);
 
     if (!memberId) {
       return res.status(400).json({ error: 'Member ID is required' })
     }
+    
 
     // Get the household
     const household = await prisma.household.findUnique({
-      where: { id: id as string },
+      where: { id: decodedUser.householdId as string },
       include: {
         members: true
       }
@@ -51,7 +54,7 @@ export default async function removeMember(req: VercelRequest, res: VercelRespon
     // Reassign their chores
     await prisma.chore.updateMany({
       where: { 
-        householdId: id as string,
+        householdId: decodedUser.householdId as string,
         assignedToId: memberId
       },
       data: { assignedToId: null }
@@ -66,3 +69,5 @@ export default async function removeMember(req: VercelRequest, res: VercelRespon
     return res.status(500).json({ error: 'Failed to remove member' })
   }
 }
+
+export default withAuth(removeMember)

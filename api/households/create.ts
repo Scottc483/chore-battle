@@ -2,10 +2,18 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { nanoid } from 'nanoid'
 import prisma from '../../lib/prisma'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
+import { generateToken } from '../../lib/middleware/generateToken'
+import { householdCreateSchema } from '../../lib/validations/households'
 
 async function createHousehold(req: VercelRequest, res: VercelResponse) {
   try {
+
+    const validationResult = householdCreateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ error: validationResult.error.errors });
+    }
+
     const { name } = req.body
     const { decodedUser } = req.body
 
@@ -85,7 +93,12 @@ async function createHousehold(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json({ 
       success: true,
       message: 'Household created successfully',
-      household 
+      household,
+      token: generateToken({
+        userId: decodedUser.userId,
+        email: decodedUser.email,
+        householdId: household.id
+      })
     })
   } catch (error) {
     console.error('Failed to create household:', error)

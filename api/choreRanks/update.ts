@@ -1,7 +1,7 @@
 // api/chore-ranks/update.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { ChoreRankUpdateInput, ChoreRankResponse } from '../../lib/types/chores'
 import { rankUpdateSchema } from '../../lib/validations/choreRanks'
 

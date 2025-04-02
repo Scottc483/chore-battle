@@ -1,7 +1,7 @@
 // api/chores/get.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { ChoreWithRelations, ChoreResponse } from '../../lib/types/chores'
 import { isChoreExpired, getChoreResetData } from '../../lib/utils/chores'
 import prisma from '../../lib/prisma'
@@ -14,7 +14,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { decodedUser } = req.body
 
-  console.log('decodedUser', decodedUser)
+
 
   if (!decodedUser.householdId) {
     return res.status(403).json({ error: 'User must be part of a household to view chores' })

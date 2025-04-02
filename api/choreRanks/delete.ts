@@ -1,7 +1,7 @@
 // api/chore-ranks/delete.ts
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { PrismaClient } from '@prisma/client'
-import { withAuth } from '../middleware/auth'
+import { withAuth } from '../../lib/middleware/auth'
 import { rankDeleteSchema } from '../../lib/validations/choreRanks'
 
 const prisma = new PrismaClient()
