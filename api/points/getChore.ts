@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../../lib/middleware/auth'
 
 async function getChorePointHistory(req: VercelRequest, res: VercelResponse) {
   const { decodedUser } = req.body
@@ -70,4 +71,4 @@ async function getChorePointHistory(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default getChorePointHistory 
+export default withAuth(getChorePointHistory) 
