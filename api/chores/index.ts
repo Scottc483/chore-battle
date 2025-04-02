@@ -6,10 +6,17 @@ import createChore from './create'
 import updateChore from './update'
 import deleteChore from './delete'
 import getChoresById from './getById'
+import completeChore from './complete'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
-  const {id} = req.query
-  console.log('id', id)
+  const { id, action } = req.query
+
+  // Handle specific actions
+  if (action === 'complete' && id) {
+    return completeChore(req, res)
+  }
+
+  // Handle standard CRUD operations
   switch (req.method) {
     case 'GET':
       if (id) {
@@ -27,4 +34,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default handler;
+export default withAuth(handler)

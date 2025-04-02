@@ -189,6 +189,8 @@ model Reward {
   maxClaims    Int? // null means unlimited claims
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  isDeleted    Boolean  @default(false)
+  deletedAt    DateTime?
 
   // Relationships
   householdId String

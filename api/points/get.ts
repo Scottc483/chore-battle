@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
+import { withAuth } from '../../lib/middleware/auth'
 
 async function getPointHistory(req: VercelRequest, res: VercelResponse) {
   const { decodedUser } = req.body
@@ -62,4 +63,4 @@ async function getPointHistory(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default getPointHistory 
+export default withAuth(getPointHistory) 
