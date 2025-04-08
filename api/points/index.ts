@@ -3,11 +3,18 @@ import { withAuth } from '../../lib/middleware/auth'
 import getPointHistory from './get'
 import getHouseholdPointHistory from './getHousehold'
 import getChorePointHistory from './getChore'
+import getUserStats from './stats'
+import createPointHistory from './create'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
-  const { choreId, type } = req.query
+  const { choreId, type, action } = req.query
 
-  // Handle specific actions based on query params
+  // Handle specific actions
+  if (action === 'stats') {
+    return getUserStats(req, res)
+  }
+
+  // Handle specific types
   if (type === 'household') {
     return getHouseholdPointHistory(req, res)
   }
@@ -16,10 +23,12 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     return getChorePointHistory(req, res)
   }
 
-  // Default to user's point history
+  // Handle standard operations
   switch (req.method) {
     case 'GET':
       return getPointHistory(req, res)
+    case 'POST':
+      return createPointHistory(req, res)
     default:
       return res.status(405).json({ error: 'Method not allowed' })
   }

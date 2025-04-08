@@ -19,10 +19,7 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle standard CRUD operations
   switch (req.method) {
     case 'GET':
-      if (id) {
-        return getChoresById(req, res)
-      }
-      return getChores(req, res)
+      return id ? getChoresById(req, res) : getChores(req, res)
     case 'POST':
       return createChore(req, res)
     case 'PATCH':

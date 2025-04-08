@@ -4,6 +4,7 @@ import getRewards from './get'
 import createReward from './create'
 import claimReward from './claim'
 import updateClaim from './updateClaim'
+import getUserClaims from './claims'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   const { action, id } = req.query
@@ -13,7 +14,11 @@ async function handler(req: VercelRequest, res: VercelResponse) {
     return claimReward(req, res)
   }
 
-  if (req.method === 'PATCH' && req.url?.includes('/claims/')) {
+  if (action === 'claims') {
+    return getUserClaims(req, res)
+  }
+
+  if (req.url?.includes('/claims/')) {
     return updateClaim(req, res)
   }
 

@@ -15,48 +15,41 @@ import generateInviteCode from './invite-code'
 
 async function handler(req: VercelRequest, res: VercelResponse) {
   const { id, action } = req.query
-  console.log('req.query', req.query)
-  if (id) {
-    console.log('id in index household', id)
-  }
-  if (action) {
-    console.log('action in index household', action)
-  }
-  // Handle specific actions based on query params
+
+  // Handle specific actions
   if (action) {
     switch (action) {
       case 'members':
-        if (req.method === 'GET') return getHouseholdMembers(req, res)
-        if (req.method === 'DELETE') return removeMember(req, res)
-        else return res.status(405).json({ error: 'Method not allowed' })
-        break
-      case 'transfer-ownership':
-        if (req.method === 'POST') return transferOwnership(req, res)
-        else return res.status(405).json({ error: 'Method not allowed' })
-        break
+        return req.method === 'GET' 
+          ? getHouseholdMembers(req, res)
+          : req.method === 'DELETE'
+          ? removeMember(req, res)
+          : res.status(405).json({ error: 'Method not allowed' })
+      case 'transfer':
+        return req.method === 'POST'
+          ? transferOwnership(req, res)
+          : res.status(405).json({ error: 'Method not allowed' })
       case 'leave':
-        if (req.method === 'POST') return leaveHousehold(req, res)
-        else return res.status(405).json({ error: 'Method not allowed' })
-        break
+        return req.method === 'POST'
+          ? leaveHousehold(req, res)
+          : res.status(405).json({ error: 'Method not allowed' })
       case 'join':
-        if (req.method === 'POST') return joinHousehold(req, res)
-        else return res.status(405).json({ error: 'Method not allowed' })
-        break
-      case 'invite-code':
-        if (req.method === 'POST') return withAuth(generateInviteCode)(req, res)
-        else return res.status(405).json({ error: 'Method not allowed' })
-        break
+        return req.method === 'POST'
+          ? joinHousehold(req, res)
+          : res.status(405).json({ error: 'Method not allowed' })
+      case 'invite':
+        return req.method === 'POST'
+          ? generateInviteCode(req, res)
+          : res.status(405).json({ error: 'Method not allowed' })
+      default:
+        return res.status(400).json({ error: 'Invalid action' })
     }
   }
 
-  
   // Handle standard CRUD operations
   switch (req.method) {
     case 'GET':
-      if (id) {
-        return getHouseholdById(req, res)
-      }
-      return getHouseholds(req, res)
+      return id ? getHouseholdById(req, res) : getHouseholds(req, res)
     case 'POST':
       return createHousehold(req, res)
     case 'PATCH':
@@ -68,4 +61,4 @@ async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default handler;
+export default withAuth(handler)
