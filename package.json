@@ -6,6 +6,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
 "scripts": {
+  "build": "prisma generate",
   "seed": "ts-node prisma/seed.ts",
   "test": "node scripts/test.js",
   "test:api": "jest tests/api",

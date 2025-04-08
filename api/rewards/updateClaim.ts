@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
 import { updateClaimStatusSchema } from '../../lib/validations/rewards'
-
+import { withAuth } from '../../lib/middleware/auth'
 async function updateClaim(req: VercelRequest, res: VercelResponse) {
   const { decodedUser } = req.body
   const { id } = req.query
@@ -104,4 +104,4 @@ async function updateClaim(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default updateClaim 
+export default withAuth(updateClaim) 
