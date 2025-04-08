@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import prisma from '../../lib/prisma'
-
+import { withAuth } from '../../lib/middleware/auth'    
 async function getRewards(req: VercelRequest, res: VercelResponse) {
   const { decodedUser } = req.body
   const { page = '1', limit = '10' } = req.query
@@ -87,4 +87,4 @@ async function getRewards(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export default getRewards 
+export default withAuth(getRewards) 
